@@ -1,0 +1,6 @@
+{
+  "name": "Collaborative Study Rooms",
+  "description": "Professional co-working study space with customizable timers, Pomodoro synchronization, live chat discussions, and detailed analytics tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

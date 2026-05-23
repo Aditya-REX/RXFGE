@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global SAFETY NET
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 1. User Rules
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) 
+        && incoming().userId == userId
+        && incoming().displayName is string && incoming().displayName.size() <= 100
+        && incoming().email is string && incoming().email.size() <= 200
+        && incoming().totalStudyTime is int && incoming().totalStudyTime >= 0
+        && incoming().totalSessions is int && incoming().totalSessions >= 0
+        && incoming().updatedAt == request.time;
+      
+      allow update: if isOwner(userId)
+        && incoming().userId == existing().userId
+        && incoming().email == existing().email
+        && incoming().displayName is string && incoming().displayName.size() <= 100
+        && incoming().totalStudyTime is int && incoming().totalStudyTime >= 0
+        && incoming().totalSessions is int && incoming().totalSessions >= 0
+        && incoming().updatedAt == request.time;
+    }
+
+    // 2. Room Rules
+    match /rooms/{roomId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(roomId)
+        && incoming().id == roomId
+        && incoming().name is string && incoming().name.size() <= 100
+        && incoming().description is string && incoming().description.size() <= 300
+        && incoming().creatorId == request.auth.uid
+        && incoming().activeCount is int && incoming().activeCount >= 0
+        && incoming().createdAt == request.time;
+
+      allow update: if isSignedIn() && isValidId(roomId)
+        && incoming().id == existing().id
+        && incoming().creatorId == existing().creatorId
+        && incoming().createdAt == existing().createdAt
+        && incoming().name is string && incoming().name.size() <= 100
+        && incoming().description is string && incoming().description.size() <= 300
+        && incoming().activeCount is int && incoming().activeCount >= 0;
+        
+      allow delete: if isSignedIn() && existing().creatorId == request.auth.uid;
+    }
+
+    // 3. Message Rules (Sub-collection of /rooms)
+    match /rooms/{roomId}/messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(roomId) && isValidId(messageId)
+        && incoming().id == messageId
+        && incoming().roomId == roomId
+        && incoming().senderId == request.auth.uid
+        && incoming().senderName is string && incoming().senderName.size() <= 100
+        && incoming().text is string && incoming().text.size() <= 1000
+        && incoming().createdAt == request.time;
+    }
+
+    // 4. Study Logs
+    match /studyLogs/{logId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(logId)
+        && incoming().id == logId
+        && incoming().userId == request.auth.uid
+        && incoming().subject is string && incoming().subject.size() <= 100
+        && incoming().duration is int && incoming().duration >= 0
+        && incoming().createdAt == request.time;
+    }
+
+    // 5. Tasks
+    match /tasks/{taskId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(taskId)
+        && incoming().id == taskId
+        && incoming().userId == request.auth.uid
+        && incoming().title is string && incoming().title.size() <= 200
+        && incoming().subject is string && incoming().subject.size() <= 100
+        && incoming().completed is bool
+        && incoming().createdAt == request.time;
+        
+      allow update: if isSignedIn() && isValidId(taskId)
+        && existing().userId == request.auth.uid
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().title is string && incoming().title.size() <= 200
+        && incoming().subject is string && incoming().subject.size() <= 100
+        && incoming().completed is bool;
+
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}

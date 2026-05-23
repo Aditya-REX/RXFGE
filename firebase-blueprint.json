@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with study statistics",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "totalStudyTime": { "type": "integer" },
+        "totalSessions": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "email", "totalStudyTime", "totalSessions", "updatedAt"]
+    },
+    "StudyRoom": {
+      "title": "StudyRoom",
+      "description": "Collaborative study rooms with active timers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "activeCount": { "type": "integer" },
+        "timerDuration": { "type": "integer" },
+        "timerStatus": { "type": "string" },
+        "timerEndsAt": { "type": "string" },
+        "timerType": { "type": "string" }
+      },
+      "required": ["id", "name", "creatorId", "createdAt", "activeCount"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat messages in a study room",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "roomId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "roomId", "senderId", "senderName", "text", "createdAt"]
+    },
+    "StudyLog": {
+      "title": "StudyLog",
+      "description": "Completed study or Pomodoro session logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "subject": { "type": "string" },
+        "duration": { "type": "integer" },
+        "taskTitle": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "subject", "duration", "createdAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Task item in the Pomodoro or general check list",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "title", "subject", "completed", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile sync"
+    },
+    "/rooms/{roomId}": {
+      "schema": "StudyRoom",
+      "description": "Study rooms"
+    },
+    "/rooms/{roomId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages inside rooms"
+    },
+    "/studyLogs/{logId}": {
+      "schema": "StudyLog",
+      "description": "Study time logging"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Workspace checklist items"
+    }
+  }
+}
